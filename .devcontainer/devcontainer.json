@@ -1,0 +1,22 @@
+{
+  "name": "MCreator Plugin Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/java:17",
+
+  "features": {
+    "ghcr.io/devcontainers/features/gradle:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "redhat.java",
+        "naco-siren.gradle-language",
+        "vscjava.vscode-gradle"
+      ]
+    }
+  },
+
+  "forwardPorts": [],
+  "postCreateCommand": "sdk install java 17.0.11-tem"
+}
