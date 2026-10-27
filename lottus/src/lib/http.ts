@@ -1,0 +1,2 @@
+import {ApiError} from './errors';
+export async function boundedBody(req:Request,maxBytes=65536){const reader=req.body?.getReader();if(!reader)return '';const chunks:Uint8Array[]=[];let size=0;try{while(true){const{done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>maxBytes){await reader.cancel();throw new ApiError('PAYLOAD_TOO_LARGE',413);}chunks.push(value);}}finally{reader.releaseLock();}return Buffer.concat(chunks).toString('utf8');}

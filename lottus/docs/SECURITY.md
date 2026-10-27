@@ -1,0 +1,11 @@
+# Security and release gates
+
+Implemented: bounded JSON bodies, strict checkout schema, server-side ownership, central role check, trusted origin on session mutations, opaque HttpOnly SameSite=Lax sessions, Secure on HTTPS, PKCE/state/nonce, issuer/sub identity, provider verification before durable inbox insertion, no-store private APIs, nonced CSP scripts, anti-framing/nosniff/referrer headers, PostgreSQL shared limits for license mutations/activation, authenticated key encryption and append-only audit trigger.
+
+Secrets are only server environment variables and never NEXT_PUBLIC. Generate SESSION_ENCRYPTION_KEY, LICENSE_ENCRYPTION_KEY and LICENSE_LOOKUP_KEY independently with `openssl rand -base64 32`. Back them up separately from the database. Losing encryption keys loses recoverability of stored credentials; losing lookup keys prevents activation lookup. Do not change either in place: multi-version migration tooling is still required. Ed25519 signing private key must never ship in desktop clients or browser bundles.
+
+`DEPLOYMENT_ENV=production` validates HTTPS, OIDC/database config and session secret and rejects local OIDC/Stripe overrides and sandbox payment environment. This does not certify production readiness. Production must remain blocked pending ACCEPTANCE.md, legal approval and full provider validation. Set the environment explicitly: NODE_ENV=production also describes a local production build and is not an authorization to charge.
+
+Remaining security work: tested MFA/step-up and admin grants; login/webhook abuse control; absolute rate-limit keying beyond a key suffix; retention/pruning of sessions/rate buckets; keyring rotation/recovery; device proof of possession and offline challenges; bounded safe archive/SVG/Markdown processing; CSRF and role tests for future admin writes; secret scanning CI; full privacy export/deletion. Uploads are disabled, so untrusted packages cannot execute. Do not turn them on before these controls exist.
+
+No card/CVV is accepted by the application. No key is sent in emails, URLs or logs. Audit entries contain only resource IDs and action metadata. Raw payment inbox data requires access control/retention in production; use restricted DB credentials, not the local test superuser.
