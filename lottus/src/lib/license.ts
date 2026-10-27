@@ -1,0 +1,6 @@
+import {createCipheriv,createDecipheriv,createHmac,randomBytes} from 'node:crypto';
+import {secret} from './config';
+export function generateKey(){return 'LOTTUS-'+randomBytes(20).toString('hex').toUpperCase().match(/.{8}/g)!.join('-');}
+export function fingerprint(key:string){return createHmac('sha256',secret('LICENSE_LOOKUP_KEY')).update(key).digest('hex');}
+export function encryptKey(key:string,entitlementId:string){const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',secret('LICENSE_ENCRYPTION_KEY'),iv);cipher.setAAD(Buffer.from(entitlementId));const encrypted=Buffer.concat([cipher.update(key,'utf8'),cipher.final()]);return ['v1',iv.toString('base64url'),cipher.getAuthTag().toString('base64url'),encrypted.toString('base64url')].join('.');}
+export function decryptKey(value:string,entitlementId:string){const[version,iv,tag,data]=value.split('.');if(version!=='v1')throw new Error('UNKNOWN_KEY_VERSION');const decipher=createDecipheriv('aes-256-gcm',secret('LICENSE_ENCRYPTION_KEY'),Buffer.from(iv,'base64url'));decipher.setAAD(Buffer.from(entitlementId));decipher.setAuthTag(Buffer.from(tag,'base64url'));return Buffer.concat([decipher.update(Buffer.from(data,'base64url')),decipher.final()]).toString('utf8');}

@@ -1,0 +1,399 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LOTTUS Services API",
+    "version": "0.1.0",
+    "description": "Implemented reference routes. No production readiness claim. OIDC configuration and provider credentials are external requirements; consult ACCEPTANCE.md for unimplemented features."
+  },
+  "paths": {
+    "/api/v1/catalog": {
+      "get": {
+        "summary": "Localized development catalog",
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pt-BR",
+                "en",
+                "ja",
+                "es",
+                "de"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eleven applications, optionally filtered"
+          },
+          "400": {
+            "description": "Invalid locale"
+          }
+        }
+      }
+    },
+    "/api/v1/prices": {
+      "get": {
+        "summary": "Sales availability; unapproved examples are not offers",
+        "responses": {
+          "200": {
+            "description": "salesEnabled false; no approved public prices"
+          }
+        }
+      }
+    },
+    "/api/v1/releases": {
+      "get": {
+        "summary": "Verified published releases",
+        "responses": {
+          "200": {
+            "description": "Empty: no release artifacts supplied"
+          }
+        }
+      }
+    },
+    "/api/v1/community": {
+      "get": {
+        "summary": "Published community packages",
+        "responses": {
+          "200": {
+            "description": "Empty: submissions disabled"
+          }
+        }
+      }
+    },
+    "/api/v1/cloud": {
+      "get": {
+        "summary": "Cloud capability status",
+        "responses": {
+          "200": {
+            "description": "Unavailable: no validated backend or approved plans"
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Public readiness without secret detail",
+        "responses": {
+          "200": {
+            "description": "ok or degraded without database configuration"
+          },
+          "503": {
+            "description": "Dependency unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/me/license": {
+      "get": {
+        "summary": "Owned entitlement and masked credential",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owned license or null"
+          },
+          "401": {
+            "description": "Session required"
+          }
+        }
+      }
+    },
+    "/api/v1/me/license/reveal": {
+      "post": {
+        "summary": "Reveal owned key, audited; trusted Origin required",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Secret key. Cache-Control no-store"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Untrusted Origin"
+          },
+          "404": {
+            "description": "No owned active license"
+          }
+        }
+      }
+    },
+    "/api/v1/me/license/rotate": {
+      "post": {
+        "summary": "Replace credential while preserving entitlement and activations",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirm"
+                ],
+                "properties": {
+                  "confirm": {
+                    "const": "ROTATE_PRESERVE_ACTIVATIONS"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New secret key, existingActivations preserved"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Untrusted Origin"
+          }
+        }
+      }
+    },
+    "/api/v1/me/devices": {
+      "get": {
+        "summary": "List owned suite devices",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Devices"
+          },
+          "401": {
+            "description": "Session required"
+          }
+        }
+      }
+    },
+    "/api/v1/me/orders": {
+      "get": {
+        "summary": "Latest 50 owned orders",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders"
+          },
+          "401": {
+            "description": "Session required"
+          }
+        }
+      }
+    },
+    "/api/v1/checkout": {
+      "post": {
+        "summary": "Server-price one-time checkout. Sales disabled pending approval.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "country",
+                  "termsVersion",
+                  "idempotencyKey",
+                  "locale"
+                ],
+                "properties": {
+                  "country": {
+                    "type": "string",
+                    "pattern": "^[A-Z]{2}$"
+                  },
+                  "termsVersion": {
+                    "type": "string"
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "locale": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider checkout URL and owned order reference"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "409": {
+            "description": "Sales/terms/price unavailable or already owned"
+          },
+          "503": {
+            "description": "Provider or verified Brazil billing not configured"
+          }
+        }
+      }
+    },
+    "/api/v1/activations/keys": {
+      "get": {
+        "summary": "Public Ed25519 receipt verification JWKs",
+        "responses": {
+          "200": {
+            "description": "JWKS; empty when signing not configured"
+          }
+        }
+      }
+    },
+    "/api/v1/activations/activate": {
+      "post": {
+        "summary": "Activate device using suite bearer key; no browser session required",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key",
+                  "devicePublicKey",
+                  "deviceName",
+                  "applicationId"
+                ],
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "writeOnly": true
+                  },
+                  "devicePublicKey": {
+                    "type": "string",
+                    "minLength": 32,
+                    "maxLength": 2048
+                  },
+                  "deviceName": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "applicationId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "deviceId and signed JWS receipt"
+          },
+          "403": {
+            "description": "Invalid entitlement or inactive device"
+          },
+          "409": {
+            "description": "Device limit reached"
+          },
+          "503": {
+            "description": "Activation policy/signing not configured"
+          }
+        }
+      }
+    },
+    "/api/admin/status": {
+      "get": {
+        "summary": "Admin-only masked operational counts and approval states",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Counts, capabilities and price approval states; no keys"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Admin role required"
+          }
+        }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "summary": "Raw-body Stripe-Signature verification and durable inbox. Not session-authenticated.",
+        "responses": {
+          "200": {
+            "description": "Persisted/deduplicated"
+          },
+          "400": {
+            "description": "Invalid signature/environment"
+          },
+          "503": {
+            "description": "Not configured or persistence failed"
+          }
+        }
+      }
+    },
+    "/api/webhooks/asaas": {
+      "post": {
+        "summary": "Asaas dedicated asaas-access-token validation and durable inbox",
+        "responses": {
+          "200": {
+            "description": "Persisted/deduplicated"
+          },
+          "401": {
+            "description": "Invalid webhook token"
+          },
+          "503": {
+            "description": "Not configured or persistence failed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "lottus-session"
+      }
+    }
+  }
+}
